@@ -1,1 +1,1 @@
-Project 2 Pong Clone
+Project 3: Lunar Lander
