@@ -1,7 +1,7 @@
 /**
-* Author: [Seha Kim]
- * Assignment: Pong Clone
-* Date due: 2025-3-01, 11:59pm
+* Author: Seha Kim
+* Assignment: Lunar Lander
+* Date due: 2025-3-18, 11:59pm
 * I pledge that I have completed this assignment without
 * collaborating with anyone else, in conformance with the
 * NYU School of Engineering Policies and Procedures on
@@ -9,118 +9,218 @@
 **/
 #define GL_SILENCE_DEPRECATION
 #define STB_IMAGE_IMPLEMENTATION
-#define LOG(argument) std::cout << argument << '\n'
-#define GL_GLEXT_PROTOTYPES 1
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
 #endif
 
+#define GL_GLEXT_PROTOTYPES 1
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "ShaderProgram.h"
 #include "stb_image.h"
+#include <vector>
+#include "Entity.h"
+
+#include <ctime>
+#include "cmath"
 
 enum AppStatus { RUNNING, TERMINATED };
-enum ScaleDirection { GROWING, SHRINKING };
 
-constexpr int WINDOW_WIDTH  = 534 * 2,
-              WINDOW_HEIGHT = 400 * 2;
+struct GameState
+{
+    Entity* ship;
+    Entity* map;
+    Entity* platforms;
+    Entity* target;
+};
 
-constexpr float BG_RED     = 0.9765625f,
-                BG_GREEN   = 0.97265625f,
-                BG_BLUE    = 0.9609375f,
-                BG_OPACITY = 1.0f;
+GameState g_state;
 
-constexpr int VIEWPORT_X      = 0,
-              VIEWPORT_Y      = 0,
-              VIEWPORT_WIDTH  = WINDOW_WIDTH,
-              VIEWPORT_HEIGHT = WINDOW_HEIGHT;
+enum Coordinate
+{
+    x_coordinate,
+    y_coordinate
+};
 
-constexpr char V_SHADER_PATH[] = "shaders/vertex_textured.glsl",
-               F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
+//enum Direction { LEFT, RIGHT, UP, DOWN };
 
-constexpr float MILLISECONDS_IN_SECOND = 1000.0;
-float g_previous_ticks = 0.0f;
+#define LOG(argument) std::cout << argument << '\n'
 
-constexpr float ROT_INCREMENT = 1.0f;
-
-constexpr GLint NUMBER_OF_TEXTURES = 1,
-                LEVEL_OF_DETAIL    = 0,
-                TEXTURE_BORDER     = 0;
-int g_frame_counter = 0;
-
-constexpr char baseballbat1_SPRITE_FILEPATH[]    = "/Users/epochsum/Desktop/triangle/assets/baseballbat1.jpg";
-constexpr char baseballbat2_SPRITE_FILEPATH[]    = "/Users/epochsum/Desktop/triangle/assets/baseballbat2.jpg";
-constexpr char baseball_SPRITE_FILEPATH[]    = "/Users/epochsum/Desktop/triangle/assets/baseball.jpg";
-constexpr char YOUWIN_SPRITE_FILEPATH[]    = "/Users/epochsum/Desktop/triangle/assets/youwin.jpg";
-
-constexpr glm::vec3 INIT_baseballbat1_SCALE = glm::vec3(1.0f, 3.0f, 0.0f),
-INIT_baseballbat2_SCALE = glm::vec3(1.0f, 3.0f, 0.0f),
-INIT_baseball_SCALE = glm::vec3(1.0f, 1.0f, 0.0f);
-
-constexpr glm::vec3 INIT_POS_baseballbat1 = glm::vec3(-4.0f, 0.0f, 0.0f);
-constexpr glm::vec3 INIT_POS_baseballbat2 = glm::vec3(4.0f, 0.0f, 0.0f);
-
-bool game_start = false;
-
-bool baseballbat1_collision_top = false;
-bool baseballbat1_collision_bottom = false;
-bool baseballbat1_collision_top_ai = false;
-bool baseballbat1_collision_bottom_ai = false;
-
-bool baseballbat2_collision_top = false;
-bool baseballbat2_collision_bottom = false;
-
-bool baseballbat1_youwin = false;
-bool baseballbat2_youwin = false;
+const int WINDOW_WIDTH = 500 * 2,
+WINDOW_HEIGHT = 400 * 2;
 
 
-bool baseball_collision_top = false;
-bool baseball_collision_bottom = false;
-bool baseball_collision_right = false;
-bool baseball_collision_left = false;
+const float BG_RED = 0.9608f,
+BG_BLUE = 0.9608f,
+BG_GREEN = 0.9608f,
+BG_OPACITY = 1.0f;
+
+const int VIEWPORT_X = 0,
+VIEWPORT_Y = 0,
+VIEWPORT_WIDTH = WINDOW_WIDTH,
+VIEWPORT_HEIGHT = WINDOW_HEIGHT;
+
+const char V_SHADER_PATH[] = "shaders/vertex_textured.glsl",
+F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
+
+const float MILLISECONDS_IN_SECOND = 1000.0;
+//const float DEGREES_PER_SECOND = 90.0f;
+
+const glm::vec3 ORIGIN = glm::vec3(0.0f, 0.0f, 0.0f),
+DOUBLE = glm::vec3(2.0f, 2.0f, 0.0f);
+
+const int NUMBER_OF_TEXTURES = 1;
+const GLint LEVEL_OF_DETAIL = 0;
+const GLint TEXTURE_BORDER = 0;
+
+//TIMESTEP
+constexpr float FIXED_TIMESTEP = 1.0f / 60.0f;
+constexpr float ACC_OF_GRAVITY = -1.5f;
+constexpr int PLATFORM_COUNT = 5;
+float g_time_accumulator = 0.0f;
 
 
-bool ai_mode = false;
+const char SHIP_SPRITE_FILEPATH[] = "/Users/epochsum/Desktop/triangle/assets/lunar.jpg";
+const char MAP_SPRITE_FILEPATH[] = "/Users/epochsum/Desktop/triangle/assets/moonground.jpeg";
+const char TARGET_SPRITE_FILEPATH[] = "/Users/epochsum/Desktop/triangle/assets/target.png";
+const char FONT_SPRITE_FILEPATH[] = "/Users/epochsum/Desktop/triangle/assets/font.png";
 
-constexpr float MIN_COLLISION_DISTANCE = 1.0f;
-
-glm::vec3 g_baseballbat2_position = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 g_baseballbat2_movement = glm::vec3(0.0f, 0.0f, 0.0f);
-
-glm::vec3 g_baseballbat1_position = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 g_baseballbat1_movement = glm::vec3(0.0f, 0.0f, 0.0f);
-
-glm::vec3 g_baseball_position = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 g_baseball_movement = glm::vec3(1.0f, 1.0f, 0.0f);
-
-float baseball_increment_x = 2.5f;
-float baseball_increment_y = 2.5f;
-float increment = 2.5f;
-float direction = 0.0f;
-float g_baseballbat2_speed = 2.5f;
-float g_baseballbat1_speed = 2.5f;
+const int FONTBANK_SIZE = 16,
+FRAMES_PER_SECOND = 4;
 
 SDL_Window* g_display_window;
-AppStatus g_app_status = RUNNING;
-ShaderProgram g_shader_program = ShaderProgram();
+bool g_game_is_running = true;
+bool g_is_growing = true;
 
-// GLuint initialize textures
+bool failed = false;
+bool succeed = false;
+const int map_speed = 1.0f;
+
+ShaderProgram g_shader_program;
+
 glm::mat4 g_view_matrix,
-g_baseballbat1_matrix,
-g_baseballbat2_matrix,
-g_baseball_matrix,
-g_youwin_matrix,
+g_ship_model_matrix,
+//g_frame_model_matrix,
 g_projection_matrix;
 
-GLuint g_baseballbat1_texture_id;
-GLuint g_baseballbat2_texture_id;
-GLuint g_baseball_texture_id;
-GLuint g_youwin_texture_id;
-GLuint g_background_texture_id;
+float g_previous_ticks = 0.0f;
+
+GLuint g_ship_texture_id,
+g_map_texture_id,
+g_win_texture_id,
+g_target_texture_id,
+//g_frame_texture_id,
+g_font_texture_id;
+
+float g_ship_speed = 1.0f;
+
+bool is_moving_h = false;
+bool is_moving_v = false;
+constexpr int SPRITESHEET_DIMENSIONS_COLUMNS = 4;
+constexpr int SPIRTESHEET_DIMENSIONS_ROWS = 2;
+
+
+
+bool s_key = false;
+bool w_key = false;
+bool a_key = false;
+bool d_key = false;
+
+float g_animation_time = 0.0f;
+int g_animation_frames = 2;
+int g_animation_index = 0;
+
+
+void draw_text(ShaderProgram* program, GLuint font_texture_id, std::string text, float screen_size, float spacing, glm::vec3 position)
+{
+   
+    float width = 1.0f / FONTBANK_SIZE;
+    float height = 1.0f / FONTBANK_SIZE;
+
+    std::vector<float> vertices;
+    std::vector<float> texture_coordinates;
+
+    // For every character...
+    for (int i = 0; i < text.size(); i++) {
+        int spritesheet_index = (int)text[i];
+        float offset = (screen_size + spacing) * i;
+
+        float u_coordinate = (float)(spritesheet_index % FONTBANK_SIZE) / FONTBANK_SIZE;
+        float v_coordinate = (float)(spritesheet_index / FONTBANK_SIZE) / FONTBANK_SIZE;
+
+        vertices.insert(vertices.end(), {
+            offset + (-0.5f * screen_size), 0.5f * screen_size,
+            offset + (-0.5f * screen_size), -0.5f * screen_size,
+            offset + (0.5f * screen_size), 0.5f * screen_size,
+            offset + (0.5f * screen_size), -0.5f * screen_size,
+            offset + (0.5f * screen_size), 0.5f * screen_size,
+            offset + (-0.5f * screen_size), -0.5f * screen_size,
+            });
+
+        texture_coordinates.insert(texture_coordinates.end(), {
+            u_coordinate, v_coordinate,
+            u_coordinate, v_coordinate + height,
+            u_coordinate + width, v_coordinate,
+            u_coordinate + width, v_coordinate + height,
+            u_coordinate + width, v_coordinate,
+            u_coordinate, v_coordinate + height,
+            });
+    }
+
+    glm::mat4 model_matrix = glm::mat4(1.0f);
+    model_matrix = glm::translate(model_matrix, position);
+
+    program->set_model_matrix(model_matrix);
+    glUseProgram(program->get_program_id());
+
+    glVertexAttribPointer(program->get_position_attribute(), 2, GL_FLOAT, false, 0, vertices.data());
+    glEnableVertexAttribArray(program->get_position_attribute());
+    glVertexAttribPointer(program->get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates.data());
+    glEnableVertexAttribArray(program->get_tex_coordinate_attribute());
+
+    glBindTexture(GL_TEXTURE_2D, font_texture_id);
+    glDrawArrays(GL_TRIANGLES, 0, (int)(text.size() * 6));
+
+    glDisableVertexAttribArray(program->get_position_attribute());
+    glDisableVertexAttribArray(program->get_tex_coordinate_attribute());
+}
+
+void draw_sprite_from_texture_atlas(ShaderProgram* program, GLuint texture_id, int index, int rows, int cols)
+{
+    float u_coord = (float)(index % cols) / (float)cols;
+    float v_coord = 1.0f - ((float)(index / cols + 1) / (float)rows); // Flip vertically
+
+    float width = 1.0f / (float)cols;
+    float height = 1.0f / (float)rows;
+
+    float tex_coords[] =
+    {
+        u_coord, v_coord + height, u_coord + width, v_coord + height, u_coord + width, v_coord,
+        u_coord, v_coord + height, u_coord + width, v_coord, u_coord, v_coord
+    };
+
+    float vertices[] =
+    {
+        -0.5, -0.5, 0.5, -0.5,  0.5, 0.5,
+        -0.5, -0.5, 0.5,  0.5, -0.5, 0.5
+    };
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    glVertexAttribPointer(program->get_position_attribute(), 2, GL_FLOAT, false, 0, vertices);
+    glEnableVertexAttribArray(program->get_position_attribute());
+
+    glVertexAttribPointer(program->get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, tex_coords);
+    glEnableVertexAttribArray(program->get_tex_coordinate_attribute());
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glDisableVertexAttribArray(program->get_position_attribute());
+    glDisableVertexAttribArray(program->get_tex_coordinate_attribute());
+}
 
 GLuint load_texture(const char* filepath)
 {
@@ -129,7 +229,7 @@ GLuint load_texture(const char* filepath)
 
     if (image == NULL)
     {
-        LOG("Unable to load image. Make sure the path is correct.");
+        LOG("Wrong Image.");
         assert(false);
     }
 
@@ -143,14 +243,20 @@ GLuint load_texture(const char* filepath)
 
     stbi_image_free(image);
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
     return textureID;
 }
 
-
 void initialise()
 {
-    SDL_Init(SDL_INIT_VIDEO);
-    g_display_window = SDL_CreateWindow("Two Baseball Bats",
+
+
+    // Initialise video and joystick subsystems
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK);
+
+    g_display_window = SDL_CreateWindow("Hello, Animation!",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH, WINDOW_HEIGHT,
         SDL_WINDOW_OPENGL);
@@ -158,91 +264,79 @@ void initialise()
     SDL_GLContext context = SDL_GL_CreateContext(g_display_window);
     SDL_GL_MakeCurrent(g_display_window, context);
 
-    if (g_display_window == nullptr)
-    {
-        std::cerr << "Error: SDL window could not be created.\n";
-        SDL_Quit();
-        exit(1);
-
-    }
-
 #ifdef _WINDOWS
     glewInit();
 #endif
-  
-  glViewport(VIEWPORT_X, VIEWPORT_Y, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+
+    glViewport(VIEWPORT_X, VIEWPORT_Y, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
     g_shader_program.load(V_SHADER_PATH, F_SHADER_PATH);
 
-    g_baseballbat1_matrix = glm::mat4(1.0f);
-    g_baseballbat2_matrix = glm::mat4(1.0f);
-    g_baseball_matrix = glm::mat4(1.0f);
     g_view_matrix = glm::mat4(1.0f);
-    g_youwin_matrix = glm::mat4(1.0f);
     g_projection_matrix = glm::ortho(-5.0f, 5.0f, -3.75f, 3.75f, -1.0f, 1.0f);
 
+
+    g_ship_model_matrix = glm::mat4(1.0f);
     g_shader_program.set_projection_matrix(g_projection_matrix);
     g_shader_program.set_view_matrix(g_view_matrix);
 
     glUseProgram(g_shader_program.get_program_id());
+    g_ship_texture_id = load_texture(SHIP_SPRITE_FILEPATH);
+    g_map_texture_id = load_texture(MAP_SPRITE_FILEPATH);
+    g_target_texture_id = load_texture(TARGET_SPRITE_FILEPATH);
+    g_font_texture_id = load_texture(FONT_SPRITE_FILEPATH);
 
 
-    g_baseballbat1_texture_id = load_texture(baseballbat1_SPRITE_FILEPATH);
-    g_baseballbat2_texture_id = load_texture(baseballbat2_SPRITE_FILEPATH);
-    g_baseball_texture_id = load_texture(baseball_SPRITE_FILEPATH);
-    g_youwin_texture_id = load_texture(YOUWIN_SPRITE_FILEPATH);
-    g_background_texture_id = load_texture("/Users/epochsum/Desktop/triangle/assets/baseballstadium.jpg");
+    int g_ship_flying[4][2] =
+    {
+        {0, 4},
+        {1, 5},
+        {2, 6},
+        {3, 7}
+    };
 
+    g_state.ship = new Entity(g_ship_texture_id, g_ship_speed, g_ship_flying, g_animation_time, g_animation_frames,
+        g_animation_index, SPRITESHEET_DIMENSIONS_COLUMNS, SPIRTESHEET_DIMENSIONS_ROWS);
 
+    g_state.ship->set_acceleration(glm::vec3(0.0f, ACC_OF_GRAVITY, 0.0f));
+    g_state.ship->set_position(glm::vec3(0.0f, 3.0f, 0.0f));
+    g_state.platforms = new Entity[PLATFORM_COUNT];
 
+    g_state.target = new Entity(g_target_texture_id, 0);
+
+    for (int i = 0; i < PLATFORM_COUNT; i++)
+    {
+        g_state.platforms[i].set_texture_id(load_texture(MAP_SPRITE_FILEPATH));
+        g_state.platforms[i].set_position(glm::vec3(i - 1.0f, -2.8f, 0.0f));
+        g_state.platforms[i].update(0.0f, nullptr, 0, false, false);
+    }
+
+    g_state.map = new Entity(g_map_texture_id, map_speed);
+    g_state.ship->face_down();
+
+    glClearColor(BG_RED, BG_BLUE, BG_GREEN, BG_OPACITY);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-
-
-void process_input() {
-    g_baseballbat1_movement = glm::vec3(0.0f);
-    g_baseballbat2_movement = glm::vec3(0.0f);
-    g_baseball_movement = glm::vec3(0.0f);
+void process_input()
+{
+    g_state.ship->set_movement(glm::vec3(0.0f));
 
     SDL_Event event;
+
     while (SDL_PollEvent(&event))
     {
-        switch (event.type)
-        {
-        case SDL_QUIT:
+        switch (event.type) {
         case SDL_WINDOWEVENT_CLOSE:
-            g_app_status = TERMINATED;
+        case SDL_QUIT:
+            g_game_is_running = false;
             break;
 
-
         case SDL_KEYDOWN:
-            switch (event.key.keysym.sym)
-            {
-            case SDLK_UP:
-                g_baseballbat2_movement.y = 1.0f;
-                break;
-
-            case SDLK_DOWN:
-                g_baseballbat2_movement.y = -1.0f;
-                break;
-
+            switch (event.key.keysym.sym) {
             case SDLK_q:
-                g_app_status = TERMINATED;
-                break;
-
-            case SDLK_w:
-                g_baseballbat1_movement.y = 1.0f;
-                break;
-            case SDLK_s:
-                g_baseballbat1_movement.y = -1.0f;
-                break;
-            case SDLK_t:
-                ai_mode = !(ai_mode);
-                break;
-            case SDLK_SPACE:
-                game_start = true;
+                g_game_is_running = false;
                 break;
 
             default:
@@ -252,61 +346,45 @@ void process_input() {
             break;
         }
     }
-
-
     const Uint8* key_state = SDL_GetKeyboardState(NULL);
+
+    if (key_state[SDL_SCANCODE_LEFT]) {
+        g_state.ship->set_acceleration(glm::vec3(-0.2f, g_state.ship->get_acceleration().y, 0.0f));
+        a_key = true;
+        is_moving_h = true;
+    }
+    else if (key_state[SDL_SCANCODE_RIGHT]) {
+        g_state.ship->set_acceleration(glm::vec3(0.2f, g_state.ship->get_acceleration().y, 0.0f));
+        d_key = true;
+        is_moving_h = true;
+    }
+    else {
+        g_state.ship->set_acceleration(glm::vec3(0.0f, g_state.ship->get_acceleration().y, 0.0f)); // Stops adding force but keeps drift
+        is_moving_h = false;
+    }
+
     if (key_state[SDL_SCANCODE_UP])
     {
-        if (baseballbat2_collision_top == false)
-        {
-            g_baseballbat2_movement.y = 1.0f;
-        }
+        g_state.ship->move_up();
+        w_key = true;
+        is_moving_v = true;
     }
+
     else if (key_state[SDL_SCANCODE_DOWN])
     {
-        if (baseballbat2_collision_bottom == false)
-        {
-            g_baseballbat2_movement.y = -1.0f;
-        }
+        g_state.ship->move_down();
+        s_key = true;
+        is_moving_v = true;
     }
+    else { is_moving_v = false; }
 
-    if (key_state[SDL_SCANCODE_W])
+
+
+    if (glm::length(g_state.ship->get_movement()) > 1.0f)
     {
-        if (ai_mode == false)
-        {
-            if (baseballbat1_collision_top == false)
-            {
-                g_baseballbat1_movement.y = 1.0f;
-            }
-
-        }
-
-
+        g_state.ship->normalise_movement();
     }
-    else if (key_state[SDL_SCANCODE_S])
-    {
-        if (ai_mode == false)
-        {
-            if (baseballbat1_collision_bottom == false)
-            {
-                g_baseballbat1_movement.y = -1.0f;
-            }
-
-        }
-
-    }
-
-    if (glm::length(g_baseballbat2_movement) > 1.0f)
-    {
-        g_baseballbat2_movement = glm::normalize(g_baseballbat2_movement);
-    }
-    if (glm::length(g_baseballbat1_movement) > 1.0f)
-    {
-        g_baseballbat1_movement = glm::normalize(g_baseballbat1_movement);
-    }
-
 }
-
 
 void update()
 {
@@ -314,245 +392,88 @@ void update()
     float delta_time = ticks - g_previous_ticks;
     g_previous_ticks = ticks;
 
-    g_baseballbat2_position += g_baseballbat2_movement * g_baseballbat2_speed * delta_time;
-    g_baseballbat1_position += g_baseballbat1_movement * g_baseballbat1_speed * delta_time;
+    delta_time += g_time_accumulator;
 
-    g_youwin_matrix = glm::mat4(1.0f);
-    g_baseballbat1_matrix = glm::mat4(1.0f);
-    g_baseballbat2_matrix = glm::mat4(1.0f);
-    g_baseball_matrix = glm::mat4(1.0f);
-
-    if (!baseballbat2_youwin && !baseballbat1_youwin) {
-        g_youwin_matrix = glm::translate(g_youwin_matrix, glm::vec3(10.0f, 0.0f, 0.0f));
-    } else if (baseballbat2_youwin) {
-        g_youwin_matrix = glm::translate(g_youwin_matrix, glm::vec3(3.0f, 0.0f, 0.0f));
-    } else if (baseballbat1_youwin) {
-        g_youwin_matrix = glm::translate(g_youwin_matrix, glm::vec3(-3.0f, 0.0f, 0.0f));
+    if (delta_time < FIXED_TIMESTEP) {
+        g_time_accumulator = delta_time;
+        return;
     }
 
-    g_youwin_matrix = glm::scale(g_youwin_matrix, glm::vec3(2.0f, 2.0f, 0.0f));
-
-    g_baseballbat1_matrix = glm::translate(g_baseballbat1_matrix, g_baseballbat1_position);
-    if (ai_mode) {
-        g_baseballbat1_matrix = glm::mat4(1.0f);
-        if (baseballbat1_collision_top_ai || baseballbat1_collision_bottom_ai) {
-            increment = -increment;
-        }
-        direction += increment * delta_time;
-        g_baseballbat1_matrix = glm::translate(g_baseballbat1_matrix, glm::vec3(0.0f, direction, 0.0f));
-
-        float y_baseballbat1_distance_top_ai = (direction + INIT_POS_baseballbat1.y + INIT_baseballbat1_SCALE.y / 2.0f) - 3.75f;
-        float y_baseballbat1_distance_bottom_ai = (direction + INIT_POS_baseballbat1.y - INIT_baseballbat1_SCALE.y / 2.0f) + 3.75f;
-
-        if (y_baseballbat1_distance_top_ai > 0) {
-            baseballbat1_collision_top_ai = true;
+    while (delta_time >= FIXED_TIMESTEP) {
+        // Reduce fuel if moving
+        if (g_state.ship->get_fuel() > 0) {
+            if (is_moving_h || is_moving_v) {
+                g_state.ship->reduce_fuel(0.1f);  // Reduce fuel when moving
+            }
         } else {
-            baseballbat1_collision_top_ai = false;
+            g_state.ship->set_acceleration(glm::vec3(0.0f)); // Stop acceleration
         }
-        if (y_baseballbat1_distance_bottom_ai < 0) {
-            baseballbat1_collision_bottom_ai = true;
-        } else {
-            baseballbat1_collision_bottom_ai = false;
+
+        g_state.ship->update(FIXED_TIMESTEP, g_state.platforms, PLATFORM_COUNT, is_moving_h, is_moving_v);
+        g_state.target->update(FIXED_TIMESTEP);
+        
+        for (int i = 0; i < PLATFORM_COUNT; i++) {
+            g_state.platforms[i].update(FIXED_TIMESTEP);
+            g_state.platforms[i].set_scale(glm::vec3(10.0f, 0.5f, 1.0f));
+        }
+        delta_time -= FIXED_TIMESTEP;
+    }
+
+    if (g_state.ship->check_collision(g_state.target)) {
+        g_state.ship->set_velocity(glm::vec3(0.0f, 0.0f, 0.0f));
+        succeed = true;
+    }
+
+    bool landed_on_valid_platform = false;
+    for (int i = 0; i < PLATFORM_COUNT; i++) {
+        if (g_state.ship->check_collision(&g_state.platforms[i])) {
+            landed_on_valid_platform = true;
+            break;
         }
     }
-    g_baseballbat1_matrix = glm::translate(g_baseballbat1_matrix, INIT_POS_baseballbat1);
-    g_baseballbat1_matrix = glm::scale(g_baseballbat1_matrix, INIT_baseballbat1_SCALE);
 
-    g_baseballbat2_matrix = glm::translate(g_baseballbat2_matrix, INIT_POS_baseballbat2);
-    g_baseballbat2_matrix = glm::translate(g_baseballbat2_matrix, g_baseballbat2_position);
-    g_baseballbat2_matrix = glm::scale(g_baseballbat2_matrix, INIT_baseballbat2_SCALE);
-
-
-    if (g_baseballbat1_position.y + INIT_POS_baseballbat1.y + (INIT_baseballbat1_SCALE.y / 2.0f) > 3.75f) {
-        g_baseballbat1_position.y = 3.75f - INIT_POS_baseballbat1.y - (INIT_baseballbat1_SCALE.y / 2.0f);
-        baseballbat1_collision_top = true;
-    } else if (g_baseballbat1_position.y + INIT_POS_baseballbat1.y - (INIT_baseballbat1_SCALE.y / 2.0f) < -3.75f) {
-        g_baseballbat1_position.y = -3.75f - INIT_POS_baseballbat1.y + (INIT_baseballbat1_SCALE.y / 2.0f);
-        baseballbat1_collision_bottom = true;
-    } else {
-        baseballbat1_collision_top = false;
-        baseballbat1_collision_bottom = false;
-    }
-    // Right (baseball bat 2)
-    if (g_baseballbat2_position.y + INIT_POS_baseballbat2.y + (INIT_baseballbat2_SCALE.y / 2.0f) > 3.75f) {
-        g_baseballbat2_position.y = 3.75f - INIT_POS_baseballbat2.y - (INIT_baseballbat2_SCALE.y / 2.0f);
-        baseballbat2_collision_top = true;
-    } else if (g_baseballbat2_position.y + INIT_POS_baseballbat2.y - (INIT_baseballbat2_SCALE.y / 2.0f) < -3.75f) {
-        g_baseballbat2_position.y = -3.75f - INIT_POS_baseballbat2.y + (INIT_baseballbat2_SCALE.y / 2.0f);
-        baseballbat2_collision_bottom = true;
-    } else {
-        baseballbat2_collision_top = false;
-        baseballbat2_collision_bottom = false;
+    if (g_state.ship->get_position().y <= -2.5f && !landed_on_valid_platform) {
+        failed = true;
     }
 
-    // Baseball collision handling
-    g_baseball_matrix = glm::mat4(1.0f);
-    if (baseball_collision_top || baseball_collision_bottom) {
-        baseball_increment_y = -baseball_increment_y;
-    }
-    if (baseball_collision_right || baseball_collision_left) {
-        baseball_increment_x = 0;
-        baseball_increment_y = 0;
-    }
-    if (game_start) {
-        g_baseball_position.x += baseball_increment_x * delta_time;
-        g_baseball_position.y += baseball_increment_y * delta_time;
+    if (failed || succeed) {
+        g_state.ship->set_velocity(glm::vec3(0.0f, 0.0f, 0.0f));
+        g_state.ship->set_acceleration(glm::vec3(0.0f, 0.0f, 0.0f));
     }
 
-    // Top and bottom baseball collision
-    float y_baseball_distance_top = (g_baseball_position.y + INIT_baseball_SCALE.y / 2.0f) - 3.75f;
-    float y_baseball_distance_bottom = (g_baseball_position.y - INIT_baseball_SCALE.y / 2.0f) + 3.75f;
-
-    // Left and right baseball collision
-    float x_baseball_distance_right = (g_baseball_position.x + INIT_baseball_SCALE.x / 2.0f) - 5.0f;
-    float x_baseball_distance_left = (g_baseball_position.x - INIT_baseball_SCALE.x / 2.0f) + 5.0f;
-
-    if (y_baseball_distance_top > 0) {
-        baseball_collision_top = true;
-    } else {
-        baseball_collision_top = false;
-    }
-    if (y_baseball_distance_bottom < 0) {
-        baseball_collision_bottom = true;
-    } else {
-        baseball_collision_bottom = false;
-    }
-
-    if (x_baseball_distance_right > 0) {
-        baseball_collision_right = true;
-        baseballbat1_youwin = true;
-    } else {
-        baseball_collision_right = false;
-    }
-    if (x_baseball_distance_left < 0) {
-        baseball_collision_left = true;
-        baseballbat2_youwin = true;
-    } else {
-        baseball_collision_left = false;
-    }
-
-    float collision_factor = 0.5f;
-
-    float x_baseball_distance_bat2 = fabs(g_baseball_position.x - INIT_POS_baseballbat2.x) -
-        ((INIT_baseballbat2_SCALE.x * collision_factor + INIT_baseball_SCALE.x * collision_factor) / 2.0f);
-    float y_baseball_distance_bat2 = fabs(g_baseball_position.y - (g_baseballbat2_position.y + INIT_POS_baseballbat2.y)) -
-        ((INIT_baseballbat2_SCALE.y * collision_factor + INIT_baseball_SCALE.y * collision_factor) / 2.0f);
-
-    float x_baseball_distance_bat1 = fabs(g_baseball_position.x - INIT_POS_baseballbat1.x) -
-        ((INIT_baseballbat1_SCALE.x * collision_factor + INIT_baseball_SCALE.x * collision_factor) / 2.0f);
-    float y_baseball_distance_bat1 = fabs(g_baseball_position.y - (g_baseballbat1_position.y + INIT_POS_baseballbat1.y)) -
-        ((INIT_baseballbat1_SCALE.y * collision_factor + INIT_baseball_SCALE.y * collision_factor) / 2.0f);
-
-    if (x_baseball_distance_bat2 <= 0.0f && y_baseball_distance_bat2 <= 0.0f) {
-        baseball_increment_x = -fabs(baseball_increment_x);
-        g_baseball_position.x = INIT_POS_baseballbat2.x - (INIT_baseballbat2_SCALE.x / 2.0f) - (INIT_baseball_SCALE.x / 2.0f) - 0.1f;
-    }
-
-    if (x_baseball_distance_bat1 <= 0.0f && y_baseball_distance_bat1 <= 0.0f) {
-        baseball_increment_x = fabs(baseball_increment_x);
-        g_baseball_position.x = INIT_POS_baseballbat1.x + (INIT_baseballbat1_SCALE.x / 2.0f) + (INIT_baseball_SCALE.x / 2.0f) + 0.1f;
-    }
-
-    if (game_start) {
-        g_baseball_matrix = glm::translate(g_baseball_matrix, g_baseball_position);
-    }
+    g_state.target->set_position(glm::vec3(-1.0f, -2.4f, 0.0f));
+    g_state.target->set_scale(glm::vec3(0.8f, 0.8f, 0.8f));
+    g_state.ship->set_scale(glm::vec3(0.3f, 0.3f, 1.0f));  // Experiment with values
 }
-
-
-void draw_object(glm::mat4 &object_g_model_matrix, GLuint &object_texture_id)
-{
-    g_shader_program.set_model_matrix(object_g_model_matrix);
-    glBindTexture(GL_TEXTURE_2D, object_texture_id);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-}
-
-
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glm::mat4 background_matrix = glm::mat4(1.0f);
-    background_matrix = glm::scale(background_matrix, glm::vec3(10.0f, 7.5f, 1.0f));
+    g_state.ship->render(&g_shader_program);
+    g_state.target->render(&g_shader_program);
+    
+    for (int i = 0; i < PLATFORM_COUNT; i++)
+        g_state.platforms[i].render(&g_shader_program);
 
-    g_shader_program.set_model_matrix(background_matrix);
-    glBindTexture(GL_TEXTURE_2D, g_background_texture_id);
+    draw_text(&g_shader_program, g_font_texture_id, "FUEL: " + std::to_string((int)g_state.ship->get_fuel()), 0.2f, 0.005f, glm::vec3(-4.5f, 3.0f, 0.0f));
 
-    // for bg
-    float bg_vertices[] = {
-        -0.5f, -0.5f, // bottom left
-        0.5f, -0.5f,  // bottom right
-        0.5f, 0.5f,   // top right
-        -0.5f, -0.5f, // bottom left
-        0.5f, 0.5f,   // top right
-        -0.5f, 0.5f   // top left
-    };
+    if (succeed) {
+        draw_text(&g_shader_program, g_font_texture_id, "MISSION SUCCESSFUL", 0.2f, 0.005f, glm::vec3(-3.5f, 0.0f, 0.0f));
+    }
 
-    float bg_texture_coords[] = {
-        0.0f, 1.0f, // bottom left
-        1.0f, 1.0f, // bottom right
-        1.0f, 0.0f, // top right
-        0.0f, 1.0f, // bottom left
-        1.0f, 0.0f, // top right
-        0.0f, 0.0f  // top left
-    };
-
-    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, bg_vertices);
-    glEnableVertexAttribArray(g_shader_program.get_position_attribute());
-    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, bg_texture_coords);
-    glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(g_shader_program.get_position_attribute());
-    glDisableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
-
-
-    //vertices
-    float vertices[] =
-    {
-         -0.5f, -0.5f,
-         0.5f, -0.5f,
-         0.5f, 0.5f,
-         -0.5f, -0.5f,
-         0.5f, 0.5f,
-         -0.5f, 0.5f
-    };
-
-    //textures
-    float texture_coordinates[] = {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-    };
-
-    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, vertices);
-    glEnableVertexAttribArray(g_shader_program.get_position_attribute());
-
-    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates);
-    glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
-
-    //bind texture
-    draw_object(g_baseballbat1_matrix, g_baseballbat1_texture_id);
-    draw_object(g_baseballbat2_matrix, g_baseballbat2_texture_id);
-    draw_object(g_baseball_matrix, g_baseball_texture_id);
-    draw_object(g_youwin_matrix, g_youwin_texture_id);
-
-
-    glDisableVertexAttribArray(g_shader_program.get_position_attribute());
-    glDisableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
+    if (failed) {
+        draw_text(&g_shader_program, g_font_texture_id, "MISSION FAILED", 0.2f, 0.005f, glm::vec3(-2.5f, 0.0f, 0.0f));
+    }
 
     SDL_GL_SwapWindow(g_display_window);
 }
 
-
 void shutdown() { SDL_Quit(); }
-
 
 int main(int argc, char* argv[])
 {
     initialise();
 
-    while (g_app_status == RUNNING)
+    while (g_game_is_running)
     {
         process_input();
         update();
