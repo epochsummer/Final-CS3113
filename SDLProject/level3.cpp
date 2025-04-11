@@ -1,8 +1,8 @@
 #include "Scene.h"
 
 void LoadLevel3(Scene* scene) {
-    scene->obstacleCount = 3;
-    scene->platformCount = 11;  
+    scene->obstacleCount = 4;
+    scene->platformCount = 11;
     delete[] scene->platforms;
     delete[] scene->obstacles;
     delete scene->ship;

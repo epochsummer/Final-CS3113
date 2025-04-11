@@ -53,7 +53,7 @@ GLuint Scene::LoadTexture(const char* filepath) {
 
 void Scene::Initialize() {
     SDL_Init(SDL_INIT_VIDEO);
-    window = SDL_CreateWindow("Lunar Lander", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1000, 800, SDL_WINDOW_OPENGL);
+    window = SDL_CreateWindow("Rise of AI", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1000, 800, SDL_WINDOW_OPENGL);
     context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, context);
 
