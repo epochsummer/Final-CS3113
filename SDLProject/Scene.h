@@ -3,15 +3,13 @@
 #include "ShaderProgram.h"
 #include "Entity.h"
 #include <SDL.h>
+#include <SDL_opengl.h>
 #include <vector>
 #include <string>
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-enum SceneMode {
-    MENU_MODE,
-    GAMEPLAY_MODE
-};
+enum GameMode { MENU_MODE, GAMEPLAY_MODE };
 
 class Scene {
 public:
@@ -19,46 +17,64 @@ public:
     ~Scene();
 
     void Initialize();
+    GLuint LoadTexture(const char* filepath);
     void ProcessInput(SDL_Event& event);
-    void Update(float deltaTime);
     void Render();
+    void Update(float deltaTime);
     bool IsRunning() const;
     void StopRunning();
 
-private:
-    SceneMode mode;
-    SDL_Window* window;
-    SDL_GLContext context;
-
-    ShaderProgram shaderProgram;
+    // Public access to these members for Level1/2/3 loading
+    Entity* ship;
+    Entity* map;
+    Entity* target;
+    Entity* platforms;
+    Entity* obstacles;
 
     GLuint shipTextureID;
     GLuint mapTextureID;
     GLuint targetTextureID;
     GLuint fontTextureID;
+    GLuint obstacleTextureID;
 
+    int obstacleCount;
+    int level;
+    bool showFailureMessage;
+    bool showWinMessage;
     glm::mat4 viewMatrix;
-    glm::mat4 projectionMatrix;
+    int platformCount;
+    int obstacleHitCount;
 
-    Entity* ship;
-    Entity* map;
-    Entity* target;
-    Entity* platforms;
+private:
+    SDL_Window* window;
+    SDL_GLContext context;
+
+    ShaderProgram shaderProgram;
+    glm::mat4 projectionMatrix;
+    const int maxObstacleHits = 3;
+
+    const int maxLevel = 3;
+    int lives;
 
     float previousTicks;
     float timeAccumulator;
+    const float fixedTimestep = 0.0166666f;
+
+    float timeSinceLastHit;
 
     bool isRunning;
     bool succeed;
     bool failed;
+    bool hasLanded;
+
     bool isMovingH;
     bool isMovingV;
+    bool canThrust;
+    bool justJumped = false;
 
-    const float gravity = -1.5f;
-    const float fixedTimestep = 1.0f / 60.0f;
-    const int platformCount = 5;
+    GameMode mode;
 
-    GLuint LoadTexture(const char* filepath);
     void HandleGameplayInput(const Uint8* keyState);
     void DrawText(ShaderProgram* program, GLuint textureID, std::string text, float size, float spacing, glm::vec3 position);
+    void LoadLevel(int levelNum);
 };
