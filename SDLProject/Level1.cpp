@@ -2,7 +2,7 @@
 
 void LoadLevel1(Scene* scene) {
     scene->obstacleCount = 1;
-    scene->platformCount = 11;  // ✅ FIXED: Set platform count
+    scene->platformCount = 11;  
 
     delete[] scene->platforms;
     delete[] scene->obstacles;
@@ -25,6 +25,11 @@ void LoadLevel1(Scene* scene) {
         scene->obstacles[i].set_scale(glm::vec3(0.3f));
         scene->obstacles[i].set_width(0.3f);
         scene->obstacles[i].set_height(0.3f);
+    }
+
+    scene->aiDirections.clear();
+    for (int i = 0; i < scene->obstacleCount; ++i) {
+        scene->aiDirections.push_back(1.0f);  // start moving right
     }
 
     scene->ship = new Entity();

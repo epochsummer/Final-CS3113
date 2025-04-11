@@ -44,6 +44,8 @@ public:
     glm::mat4 viewMatrix;
     int platformCount;
     int obstacleHitCount;
+    std::vector<float> aiDirections; // add this in Scene class
+
 
 private:
     SDL_Window* window;

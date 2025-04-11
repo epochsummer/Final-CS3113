@@ -7,7 +7,6 @@
 #include "Level2.h"
 #include "Level3.h"
 
-
 const float gravityForce = -9.8f;
 const float jumpVelocity = 4.5f;
 const float hitCooldownDuration = 1.0f;
@@ -20,7 +19,9 @@ Scene::Scene()
       isMovingH(false), isMovingV(false), justJumped(false),
       obstacleHitCount(0), hasLanded(true), mode(MENU_MODE),
       obstacleCount(2), lives(3), level(1), timeSinceLastHit(hitCooldownDuration),
-      showFailureMessage(false) {}
+      showFailureMessage(false), showWinMessage(false) {
+    aiDirections.resize(obstacleCount, 1.0f);
+}
 
 Scene::~Scene() {
     delete[] platforms;
@@ -66,7 +67,7 @@ void Scene::Initialize() {
     shipTextureID = LoadTexture("/Users/epochsum/Desktop/triangle/assets/hello.png");
     mapTextureID = LoadTexture("/Users/epochsum/Desktop/triangle/assets/ground.jpg");
     fontTextureID = LoadTexture("/Users/epochsum/Desktop/triangle/assets/font.png");
-    obstacleTextureID = LoadTexture("/Users/epochsum/Desktop/triangle/assets/target.jpg");
+
     platformCount = 10;
     LoadLevel(level);
     glClearColor(0.96f, 0.96f, 0.96f, 1.0f);
@@ -75,34 +76,29 @@ void Scene::Initialize() {
 }
 
 void Scene::LoadLevel(int levelNum) {
-    if (levelNum == 1) LoadLevel1(this);
-    else if (levelNum == 2) LoadLevel2(this);
-    else if (levelNum == 3) LoadLevel3(this);
+    if (levelNum == 1) {
+        obstacleTextureID = LoadTexture("/Users/epochsum/Desktop/triangle/assets/ai.png");
+        LoadLevel1(this);
+    }
+    else if (levelNum == 2) {
+        obstacleTextureID = LoadTexture("/Users/epochsum/Desktop/triangle/assets/target.jpg");
+        LoadLevel2(this);
+    }
+    else if (levelNum == 3) {
+        obstacleTextureID = LoadTexture("/Users/epochsum/Desktop/triangle/assets/whatsup.png");
+        LoadLevel3(this);
+    }
+
+    // Ensure aiDirections matches the new obstacle count
+    aiDirections.resize(obstacleCount, 1.0f);
 }
-void Scene::ProcessInput(SDL_Event& event) {
-    if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) StopRunning();
-    if (event.type == SDL_KEYDOWN && mode == MENU_MODE && event.key.keysym.sym == SDLK_RETURN) {
-        mode = GAMEPLAY_MODE;
-        showFailureMessage = false;
-    }
 
-    if (event.type == SDL_KEYDOWN && lives <= 0 && event.key.keysym.sym == SDLK_r) {
-        level = 1;
-        lives = 3;
-        showFailureMessage = false;
-        LoadLevel(level);
-    }
+bool Scene::IsRunning() const {
+    return isRunning;
+}
 
-    const Uint8* keyState = SDL_GetKeyboardState(NULL);
-    if (mode == GAMEPLAY_MODE && !showFailureMessage) {
-        if (keyState[SDL_SCANCODE_UP] && hasLanded && !justJumped) {
-            ship->set_velocity(glm::vec3(ship->get_velocity().x, jumpVelocity, 0.0f));
-            hasLanded = false;
-            justJumped = true;
-        }
-        if (!keyState[SDL_SCANCODE_UP]) justJumped = false;
-        HandleGameplayInput(keyState);
-    }
+void Scene::StopRunning() {
+    isRunning = false;
 }
 
 void Scene::HandleGameplayInput(const Uint8* keyState) {
@@ -121,8 +117,30 @@ void Scene::HandleGameplayInput(const Uint8* keyState) {
     ship->set_velocity(velocity);
 }
 
-bool Scene::IsRunning() const { return isRunning; }
-void Scene::StopRunning() { isRunning = false; }
+void Scene::ProcessInput(SDL_Event& event) {
+    if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) StopRunning();
+    if (event.type == SDL_KEYDOWN && mode == MENU_MODE && event.key.keysym.sym == SDLK_RETURN) {
+        mode = GAMEPLAY_MODE;
+        showFailureMessage = false;
+    }
+    if (event.type == SDL_KEYDOWN && lives <= 0 && event.key.keysym.sym == SDLK_r) {
+        level = 1;
+        lives = 3;
+        showFailureMessage = false;
+        LoadLevel(level);
+    }
+    const Uint8* keyState = SDL_GetKeyboardState(NULL);
+    if (mode == GAMEPLAY_MODE && !showFailureMessage) {
+        if (keyState[SDL_SCANCODE_UP] && hasLanded && !justJumped) {
+            ship->set_velocity(glm::vec3(ship->get_velocity().x, jumpVelocity, 0.0f));
+            hasLanded = false;
+            justJumped = true;
+        }
+        if (!keyState[SDL_SCANCODE_UP]) justJumped = false;
+        HandleGameplayInput(keyState);
+    }
+}
+
 
 void Scene::Update(float deltaTime) {
     if (mode == MENU_MODE || showFailureMessage) return;
@@ -155,6 +173,44 @@ void Scene::Update(float deltaTime) {
 
         bool hitThisFrame = false;
         for (int i = 0; i < obstacleCount; i++) {
+            glm::vec3 pos = obstacles[i].get_position();
+
+            if (level == 1) {
+                // Level 1: move horizontally
+                pos.x += aiDirections[i] * 1.5f * fixedTimestep;
+                if (pos.x > 4.5f) {
+                    pos.x = 4.5f;
+                    aiDirections[i] = -1.0f;
+                } else if (pos.x < -4.5f) {
+                    pos.x = -4.5f;
+                    aiDirections[i] = 1.0f;
+                }
+            } else if(level == 2 ) {
+                // Level 2 move vertically
+                pos.y += aiDirections[i] * 1.5f * fixedTimestep;
+                if (pos.y > 3.0f) {
+                    pos.y = 3.0f;
+                    aiDirections[i] = -1.0f;
+                } else if (pos.y < -2.5f) {
+                    pos.y = -2.5f;
+                    aiDirections[i] = 1.0f;
+                }
+            }
+            else if (level == 3) {
+                // Diagonal bouncing (Level 3)
+                pos.x += aiDirections[i] * 1.0f * fixedTimestep;
+                pos.y += aiDirections[i] * 1.0f * fixedTimestep;
+
+                if (pos.x > 4.5f || pos.x < -4.5f) {
+                    aiDirections[i] *= -1.0f;
+                }
+                if (pos.y > 3.0f || pos.y < -2.5f) {
+                    aiDirections[i] *= -1.0f;
+                }
+            }
+
+            obstacles[i].set_position(pos);
+
             if (ship->check_collision(&obstacles[i])) {
                 hitThisFrame = true;
                 break;
@@ -178,6 +234,7 @@ void Scene::Update(float deltaTime) {
 
         deltaTime -= fixedTimestep;
     }
+
     if (ship->get_position().x >= 4.7f && level < 3) {
         std::cout << "Loading level " << level << std::endl;
         level++;
