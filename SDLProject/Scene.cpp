@@ -6,6 +6,8 @@
 #include "Level1.h"
 #include "Level2.h"
 #include "Level3.h"
+#include <SDL_mixer.h>
+
 
 const float gravityForce = -9.8f;
 const float jumpVelocity = 4.5f;
@@ -24,6 +26,14 @@ Scene::Scene()
 }
 
 Scene::~Scene() {
+    if (jumpSFX) Mix_FreeChunk(jumpSFX);
+    if (bgm) Mix_FreeMusic(bgm);
+    if (winMusic) Mix_FreeMusic(winMusic);
+    if (loseMusic) Mix_FreeMusic(loseMusic);
+    if (painSFX) Mix_FreeChunk(painSFX);
+    Mix_HaltMusic();
+    Mix_CloseAudio();
+
     delete[] platforms;
     if (obstacles != nullptr) {
         delete[] obstacles;
@@ -33,6 +43,7 @@ Scene::~Scene() {
     delete map;
     SDL_Quit();
 }
+
 
 GLuint Scene::LoadTexture(const char* filepath) {
     int w, h, comp;
@@ -73,6 +84,28 @@ void Scene::Initialize() {
     glClearColor(0.96f, 0.96f, 0.96f, 1.0f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        std::cerr << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << std::endl;
+    }
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);  // Audio setup
+    // Load background music
+    bgm = Mix_LoadMUS("/Users/epochsum/Desktop/triangle/assets/background.mp3");
+    winMusic = Mix_LoadMUS("/Users/epochsum/Desktop/triangle/assets/win.mp3");
+    loseMusic = Mix_LoadMUS("/Users/epochsum/Desktop/triangle/assets/lose.mp3");
+    jumpSFX = Mix_LoadWAV("/Users/epochsum/Desktop/triangle/assets/jump.mp3");
+    painMusic = Mix_LoadMUS("/Users/epochsum/Desktop/triangle/assets/pain.mp3");
+    painSFX = Mix_LoadWAV("/Users/epochsum/Desktop/triangle/assets/pain.mp3");
+
+    if(!bgm || !winMusic || !loseMusic || !jumpSFX || !painMusic || !painSFX) {
+
+        std::cerr << "Music loading error: " << Mix_GetError() << std::endl;
+    }
+
+
+
+
+    // Play music on loop (-1 means infinite loop)
+    Mix_PlayMusic(bgm, -1);
 }
 
 void Scene::LoadLevel(int levelNum) {
@@ -118,6 +151,14 @@ void Scene::HandleGameplayInput(const Uint8* keyState) {
 }
 
 void Scene::ProcessInput(SDL_Event& event) {
+    const Uint8* keyState = SDL_GetKeyboardState(NULL);
+    if (keyState[SDL_SCANCODE_UP] && hasLanded && !justJumped) {
+        ship->set_velocity(glm::vec3(ship->get_velocity().x, jumpVelocity, 0.0f));
+        hasLanded = false;
+        justJumped = true;
+
+        Mix_PlayChannel(-1, jumpSFX, 0);
+    }
     if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) StopRunning();
     if (event.type == SDL_KEYDOWN && mode == MENU_MODE && event.key.keysym.sym == SDLK_RETURN) {
         mode = GAMEPLAY_MODE;
@@ -128,8 +169,10 @@ void Scene::ProcessInput(SDL_Event& event) {
         lives = 3;
         showFailureMessage = false;
         LoadLevel(level);
+        
+        Mix_HaltMusic();             // Stop any current music
+        Mix_PlayMusic(bgm, -1);      // Start background music again
     }
-    const Uint8* keyState = SDL_GetKeyboardState(NULL);
     if (mode == GAMEPLAY_MODE && !showFailureMessage) {
         if (keyState[SDL_SCANCODE_UP] && hasLanded && !justJumped) {
             ship->set_velocity(glm::vec3(ship->get_velocity().x, jumpVelocity, 0.0f));
@@ -152,7 +195,7 @@ void Scene::Update(float deltaTime) {
         return;
     }
 
-    while (deltaTime >= fixedTimestep) {
+    while (deltaTime >= fixedTimestep && !showWinMessage && !showFailureMessage) {
         glm::vec3 accel(0.0f, gravityForce, 0.0f);
         ship->set_acceleration(accel);
 
@@ -213,6 +256,7 @@ void Scene::Update(float deltaTime) {
 
             if (ship->check_collision(&obstacles[i])) {
                 hitThisFrame = true;
+                Mix_PlayChannel(-1, painSFX, 0);
                 break;
             }
         }
@@ -221,7 +265,7 @@ void Scene::Update(float deltaTime) {
             lives--;
             timeSinceLastHit = 0.0f;
             std::cout << "Hit! Lives left: " << lives << std::endl;
-            if (lives <= 0) {
+            if (lives <= 0  && !showWinMessage) {
                 showFailureMessage = true;
                 ship->set_velocity(glm::vec3(0.0f));
                 ship->set_acceleration(glm::vec3(0.0f));
@@ -234,6 +278,20 @@ void Scene::Update(float deltaTime) {
 
         deltaTime -= fixedTimestep;
     }
+    if (ship->get_position().x >= 4.7f && level == 3 && !showWinMessage) {
+        showWinMessage = true;
+        Mix_HaltMusic();            // Stop background music
+        Mix_PlayMusic(winMusic, 1); // Play win music once
+    }
+
+    //  LOSE CONDITION
+    if (lives <= 0 && !showWinMessage) {
+        showFailureMessage = true;
+        ship->set_velocity(glm::vec3(0.0f));
+        ship->set_acceleration(glm::vec3(0.0f));
+        Mix_HaltMusic();             // Stop background music
+        Mix_PlayMusic(loseMusic, 1); // Play lose music once
+    }
 
     if (ship->get_position().x >= 4.7f && level < 3) {
         std::cout << "Loading level " << level << std::endl;
@@ -244,6 +302,8 @@ void Scene::Update(float deltaTime) {
     }
     ship->set_scale(glm::vec3(0.3f));
 }
+
+
 
 void Scene::Render() {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -320,4 +380,3 @@ void Scene::DrawText(ShaderProgram* program, GLuint textureID, std::string text,
     glDisableVertexAttribArray(program->get_position_attribute());
     glDisableVertexAttribArray(program->get_tex_coordinate_attribute());
 } 
-

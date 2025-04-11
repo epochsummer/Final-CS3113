@@ -2,7 +2,7 @@
 
 void LoadLevel1(Scene* scene) {
     scene->obstacleCount = 2;
-    scene->platformCount = 11;  
+    scene->platformCount = 11;
 
     delete[] scene->platforms;
     delete[] scene->obstacles;
