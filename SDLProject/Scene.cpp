@@ -250,7 +250,7 @@ void Scene::Render() {
     shaderProgram.set_view_matrix(viewMatrix);
 
     if (mode == MENU_MODE) {
-        DrawText(&shaderProgram, fontTextureID, "Project 4: Rise of the AI", 0.5f, 0.05f, glm::vec3(-3.0f, 1.0f, 0));
+        DrawText(&shaderProgram, fontTextureID, "Project 4: Rise of the AI", 0.2f, 0.02f, glm::vec3(-3.0f, 1.0f, 0));
         DrawText(&shaderProgram, fontTextureID, "Press Enter to Start", 0.3f, 0.05f, glm::vec3(-3.0f, -1.0f, 0));
         SDL_GL_SwapWindow(window);
         return;
