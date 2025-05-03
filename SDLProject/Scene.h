@@ -1,90 +1,44 @@
+// Scene.h
 #pragma once
+#define GL_SILENCE_DEPRECATION
 
-#include "ShaderProgram.h"
-#include "Entity.h"
+#ifdef _WINDOWS
+#include <GL/glew.h>
+#endif
+
+#define GL_GLEXT_PROTOTYPES 1
+#include <SDL_mixer.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
-#include <SDL_mixer.h>
-#include <vector>
-#include <string>
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "ShaderProgram.h"
+#include "Utility.h"
+#include "Entity.h"
+#include "Map.h"
+struct GameState
+{
+    Map* map;
+    Entity* player;
+    Entity* enemies;
+    Entity* bullet;
 
-enum GameMode { MENU_MODE, GAMEPLAY_MODE };
+    Mix_Music* bgm;
+    Mix_Chunk* shoot_sfx;
+    Mix_Chunk* walking_sfx;
+    Mix_Chunk* death_sfx;
+
+    int next_scene_id;
+};
 
 class Scene {
 public:
-    Scene();
-    ~Scene(); // cleanup happens here
 
-    void Initialize();
-    GLuint LoadTexture(const char* filepath);
-    void ProcessInput(SDL_Event& event);
-    void Render();
-    void Update(float deltaTime);
-    bool IsRunning() const;
-    void StopRunning();
+    GameState m_game_state;
 
-    // Public access to these members for Level1/2/3 loading
-    Entity* ship;
-    Entity* map;
-    Entity* target;
-    Entity* platforms;
-    Entity* obstacles;
+    virtual void initialise() = 0;
+    virtual void update(float delta_time) = 0;
+    virtual void render(ShaderProgram* program) = 0;
 
-    GLuint shipTextureID;
-    GLuint mapTextureID;
-    GLuint targetTextureID;
-    GLuint fontTextureID;
-    GLuint obstacleTextureID;
-
-    int obstacleCount;
-    int level;
-    bool showFailureMessage;
-    bool showWinMessage;
-    glm::mat4 viewMatrix;
-    int platformCount;
-    int obstacleHitCount;
-    std::vector<float> aiDirections;
-
-private:
-    SDL_Window* window;
-    SDL_GLContext context;
-
-    ShaderProgram shaderProgram;
-    glm::mat4 projectionMatrix;
-    const int maxObstacleHits = 3;
-    const int maxLevel = 3;
-    int lives;
-
-    float previousTicks;
-    float timeAccumulator;
-    const float fixedTimestep = 0.0166666f;
-    float timeSinceLastHit;
-
-    bool isRunning;
-    bool succeed;
-    bool failed;
-    bool hasLanded;
-
-    bool isMovingH;
-    bool isMovingV;
-    bool canThrust;
-    bool justJumped = false;
-
-    GameMode mode;
-
-    Mix_Music* bgm;
-    Mix_Music* winMusic;
-    Mix_Music* loseMusic;
-    Mix_Music* painMusic;
-    Mix_Chunk* jumpSFX;
-    Mix_Chunk* painSFX;
-
-    
-
-
-    void HandleGameplayInput(const Uint8* keyState);
-    void DrawText(ShaderProgram* program, GLuint textureID, std::string text, float size, float spacing, glm::vec3 position);
-    void LoadLevel(int levelNum);
+    GameState const get_state()             const { return m_game_state; }
 };

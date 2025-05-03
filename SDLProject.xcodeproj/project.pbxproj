@@ -15,11 +15,15 @@
 		DBDF1B692323DEEA007CECB1 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBDF1B662323DEEA007CECB1 /* SDL2.framework */; };
 		DBDF1B6A2323DEEA007CECB1 /* SDL2_image.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBDF1B672323DEEA007CECB1 /* SDL2_image.framework */; };
 		DBDF1B6B2323DEEA007CECB1 /* SDL2_mixer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBDF1B682323DEEA007CECB1 /* SDL2_mixer.framework */; };
+		ED4657492DC4291A004D6EB0 /* Map.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4657482DC42919004D6EB0 /* Map.cpp */; };
 		ED8028D12DA530A0001CAA47 /* Scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8028D02DA5309D001CAA47 /* Scene.cpp */; };
 		ED83EC002D8A27D600008234 /* Entity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED83EBFF2D8A27D000008234 /* Entity.cpp */; };
-		EDBF57F52DA8BB1C00EDE5DE /* Level1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDBF57F42DA8BB1500EDE5DE /* Level1.cpp */; };
-		EDBF57F92DA8BB7D00EDE5DE /* Level2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDBF57F82DA8BB7700EDE5DE /* Level2.cpp */; };
-		EDBF57FB2DA8BB8600EDE5DE /* Level3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDBF57FA2DA8BB8200EDE5DE /* Level3.cpp */; };
+		EDBF57F52DA8BB1C00EDE5DE /* LevelA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDBF57F42DA8BB1500EDE5DE /* LevelA.cpp */; };
+		EDBF57F92DA8BB7D00EDE5DE /* LevelB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDBF57F82DA8BB7700EDE5DE /* LevelB.cpp */; };
+		EDBF57FB2DA8BB8600EDE5DE /* LevelC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDBF57FA2DA8BB8200EDE5DE /* LevelC.cpp */; };
+		EDF6220F2DC4357100E4BDFF /* Utility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF6220E2DC4356E00E4BDFF /* Utility.cpp */; };
+		EDF622122DC437A200E4BDFF /* Effects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF622112DC437A100E4BDFF /* Effects.cpp */; };
+		EDF622152DC438F900E4BDFF /* MenuScreen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF622142DC438F100E4BDFF /* MenuScreen.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -48,16 +52,24 @@
 		DBDF1B662323DEEA007CECB1 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
 		DBDF1B672323DEEA007CECB1 /* SDL2_image.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_image.framework; path = ../../../../../Library/Frameworks/SDL2_image.framework; sourceTree = "<group>"; };
 		DBDF1B682323DEEA007CECB1 /* SDL2_mixer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_mixer.framework; path = ../../../../../Library/Frameworks/SDL2_mixer.framework; sourceTree = "<group>"; };
+		ED4657482DC42919004D6EB0 /* Map.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Map.cpp; sourceTree = "<group>"; };
+		ED46574B2DC42A17004D6EB0 /* Utility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Utility.h; sourceTree = "<group>"; };
+		ED4657512DC42A8A004D6EB0 /* Map.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Map.h; sourceTree = "<group>"; };
 		ED8028CD2DA52F75001CAA47 /* Scene.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Scene.h; sourceTree = "<group>"; };
 		ED8028D02DA5309D001CAA47 /* Scene.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Scene.cpp; sourceTree = "<group>"; };
 		ED83EBFE2D8A27B900008234 /* Entity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Entity.h; sourceTree = "<group>"; };
 		ED83EBFF2D8A27D000008234 /* Entity.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Entity.cpp; sourceTree = "<group>"; };
-		EDBF57F42DA8BB1500EDE5DE /* Level1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Level1.cpp; sourceTree = "<group>"; };
-		EDBF57F82DA8BB7700EDE5DE /* Level2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Level2.cpp; sourceTree = "<group>"; };
-		EDBF57FA2DA8BB8200EDE5DE /* Level3.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Level3.cpp; sourceTree = "<group>"; };
-		EDBF57FC2DA8BC0800EDE5DE /* Level1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Level1.h; sourceTree = "<group>"; };
-		EDBF57FE2DA8BC1800EDE5DE /* Level2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Level2.h; sourceTree = "<group>"; };
-		EDBF57FF2DA8BC1E00EDE5DE /* Level3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Level3.h; sourceTree = "<group>"; };
+		EDBF57F42DA8BB1500EDE5DE /* LevelA.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LevelA.cpp; sourceTree = "<group>"; };
+		EDBF57F82DA8BB7700EDE5DE /* LevelB.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LevelB.cpp; sourceTree = "<group>"; };
+		EDBF57FA2DA8BB8200EDE5DE /* LevelC.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LevelC.cpp; sourceTree = "<group>"; };
+		EDBF57FC2DA8BC0800EDE5DE /* LevelA.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LevelA.h; sourceTree = "<group>"; };
+		EDBF57FE2DA8BC1800EDE5DE /* LevelB.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LevelB.h; sourceTree = "<group>"; };
+		EDBF57FF2DA8BC1E00EDE5DE /* LevelC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LevelC.h; sourceTree = "<group>"; };
+		EDF6220E2DC4356E00E4BDFF /* Utility.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Utility.cpp; sourceTree = "<group>"; };
+		EDF622102DC4378900E4BDFF /* Effects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Effects.h; sourceTree = "<group>"; };
+		EDF622112DC437A100E4BDFF /* Effects.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Effects.cpp; sourceTree = "<group>"; };
+		EDF622142DC438F100E4BDFF /* MenuScreen.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MenuScreen.cpp; sourceTree = "<group>"; };
+		EDF622162DC4390500E4BDFF /* MenuScreen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MenuScreen.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,12 +108,20 @@
 		DBDF1B512323DE3F007CECB1 /* SDLProject */ = {
 			isa = PBXGroup;
 			children = (
-				EDBF57FF2DA8BC1E00EDE5DE /* Level3.h */,
-				EDBF57FE2DA8BC1800EDE5DE /* Level2.h */,
-				EDBF57FC2DA8BC0800EDE5DE /* Level1.h */,
-				EDBF57FA2DA8BB8200EDE5DE /* Level3.cpp */,
-				EDBF57F82DA8BB7700EDE5DE /* Level2.cpp */,
-				EDBF57F42DA8BB1500EDE5DE /* Level1.cpp */,
+				EDF622162DC4390500E4BDFF /* MenuScreen.h */,
+				EDF622142DC438F100E4BDFF /* MenuScreen.cpp */,
+				EDF622112DC437A100E4BDFF /* Effects.cpp */,
+				EDF622102DC4378900E4BDFF /* Effects.h */,
+				EDF6220E2DC4356E00E4BDFF /* Utility.cpp */,
+				ED4657512DC42A8A004D6EB0 /* Map.h */,
+				ED46574B2DC42A17004D6EB0 /* Utility.h */,
+				ED4657482DC42919004D6EB0 /* Map.cpp */,
+				EDBF57FF2DA8BC1E00EDE5DE /* LevelC.h */,
+				EDBF57FE2DA8BC1800EDE5DE /* LevelB.h */,
+				EDBF57FC2DA8BC0800EDE5DE /* LevelA.h */,
+				EDBF57FA2DA8BB8200EDE5DE /* LevelC.cpp */,
+				EDBF57F82DA8BB7700EDE5DE /* LevelB.cpp */,
+				EDBF57F42DA8BB1500EDE5DE /* LevelA.cpp */,
 				ED8028D02DA5309D001CAA47 /* Scene.cpp */,
 				ED8028CD2DA52F75001CAA47 /* Scene.h */,
 				ED83EBFF2D8A27D000008234 /* Entity.cpp */,
@@ -160,6 +180,7 @@
 				TargetAttributes = {
 					DBDF1B4E2323DE3F007CECB1 = {
 						CreatedOnToolsVersion = 10.3;
+						LastSwiftMigration = 1620;
 					};
 				};
 			};
@@ -186,13 +207,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDF6220F2DC4357100E4BDFF /* Utility.cpp in Sources */,
+				EDF622152DC438F900E4BDFF /* MenuScreen.cpp in Sources */,
 				ED8028D12DA530A0001CAA47 /* Scene.cpp in Sources */,
-				EDBF57F92DA8BB7D00EDE5DE /* Level2.cpp in Sources */,
+				EDBF57F92DA8BB7D00EDE5DE /* LevelB.cpp in Sources */,
 				DBDF1B532323DE3F007CECB1 /* main.cpp in Sources */,
 				ED83EC002D8A27D600008234 /* Entity.cpp in Sources */,
-				EDBF57FB2DA8BB8600EDE5DE /* Level3.cpp in Sources */,
+				EDBF57FB2DA8BB8600EDE5DE /* LevelC.cpp in Sources */,
+				EDF622122DC437A200E4BDFF /* Effects.cpp in Sources */,
 				DBDF1B5E2323DE8D007CECB1 /* ShaderProgram.cpp in Sources */,
-				EDBF57F52DA8BB1C00EDE5DE /* Level1.cpp in Sources */,
+				ED4657492DC4291A004D6EB0 /* Map.cpp in Sources */,
+				EDBF57F52DA8BB1C00EDE5DE /* LevelA.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -319,6 +344,7 @@
 		DBDF1B572323DE3F007CECB1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -337,12 +363,15 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		DBDF1B582323DE3F007CECB1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -361,6 +390,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
