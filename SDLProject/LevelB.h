@@ -1,4 +1,4 @@
-// LevelA.h
+// LevelB.h
 #include "Scene.h"
 
 class LevelB : public Scene {
