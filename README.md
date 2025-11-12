@@ -72,5 +72,3 @@ Used delta time, fixed time step, and the Entity/Map/Scene system.
 All assets are original.
 
 Implemented sound, AI, win/loss logic, and shader effects.
-
-Thank you for listening—and good luck staying alive.
